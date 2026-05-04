@@ -10,11 +10,11 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.aegislayer.daemon.actions.ActionExecutor
 import com.aegislayer.daemon.engine.ContextBuilder
 import com.aegislayer.daemon.engine.EventDispatcher
 import com.aegislayer.daemon.engine.RuleEngine
-import com.aegislayer.daemon.models.Condition
-import com.aegislayer.daemon.models.Rule
+import com.aegislayer.daemon.engine.RuleLoader
 import com.aegislayer.daemon.receivers.AppUsageMonitor
 import com.aegislayer.daemon.receivers.EventProcessor
 import kotlinx.coroutines.CoroutineScope
@@ -30,6 +30,7 @@ class SystemControlService : Service() {
 
     private val contextBuilder = ContextBuilder()
     private val ruleEngine = RuleEngine()
+    private lateinit var actionExecutor: ActionExecutor
     private val serviceJob = Job()
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
 
@@ -54,16 +55,11 @@ class SystemControlService : Service() {
             registerReceiver(eventProcessor, filter)
         }
 
-        // Setup dummy rules
-        val dummyRules = listOf(
-            Rule(
-                ruleId = "rule_screen_off_dnd",
-                conditions = listOf(Condition("SCREEN_ON", false)),
-                actions = listOf("ENABLE_DND"),
-                priority = 10
-            )
-        )
-        ruleEngine.loadRules(dummyRules)
+        actionExecutor = ActionExecutor(this)
+
+        // Load rules from assets/rules.json
+        val rules = RuleLoader.loadFromAssets(this)
+        ruleEngine.loadRules(rules)
 
         serviceScope.launch {
             EventDispatcher.events.collect { event ->
@@ -73,7 +69,7 @@ class SystemControlService : Service() {
                 val actions = ruleEngine.evaluateContext(snapshot)
                 if (actions.isNotEmpty()) {
                     Log.d("AegisLayer", "RuleEngine Triggered Actions: $actions")
-                    // TODO: Pass actions to ActionExecutor
+                    actionExecutor.execute(actions)
                 }
             }
         }

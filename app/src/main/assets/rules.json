@@ -1,0 +1,27 @@
+[
+  {
+    "ruleId": "rule_screen_off_dnd",
+    "conditions": [
+      { "type": "SCREEN_ON", "value": false }
+    ],
+    "actions": ["ENABLE_DND"],
+    "priority": 10
+  },
+  {
+    "ruleId": "rule_screen_on_dnd_off",
+    "conditions": [
+      { "type": "SCREEN_ON", "value": true }
+    ],
+    "actions": ["DISABLE_DND"],
+    "priority": 9
+  },
+  {
+    "ruleId": "rule_low_battery_performance",
+    "conditions": [
+      { "type": "IS_CHARGING", "value": false },
+      { "type": "BATTERY_LEVEL", "value": 15 }
+    ],
+    "actions": ["BOOST_PERFORMANCE"],
+    "priority": 8
+  }
+]
