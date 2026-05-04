@@ -11,7 +11,8 @@ import com.aegislayer.daemon.models.SystemEvent
 class EventProcessor : BroadcastReceiver() {
 
     override fun onReceive(context: Context?, intent: Intent?) {
-        val action = intent?.action ?: return
+        if (intent == null) return
+        val action = intent.action ?: return
         
         when (action) {
             Intent.ACTION_BATTERY_CHANGED -> {
