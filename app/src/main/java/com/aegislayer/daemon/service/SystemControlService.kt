@@ -24,12 +24,21 @@ class SystemControlService : Service() {
         Log.d("AegisLayer", "SystemControlService: onCreate")
         
         createNotificationChannel()
-        startForeground(1, createNotification())
+        if (Build.VERSION.SDK_INT >= 34) {
+            startForeground(1, createNotification(), android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } else {
+            startForeground(1, createNotification())
+        }
 
         appUsageMonitor = AppUsageMonitor(this)
         appUsageMonitor.startMonitoring()
         
-        registerReceiver(eventProcessor, EventProcessor.getIntentFilter())
+        val filter = EventProcessor.getIntentFilter()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(eventProcessor, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(eventProcessor, filter)
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
