@@ -17,6 +17,8 @@ import com.aegislayer.daemon.engine.RuleEngine
 import com.aegislayer.daemon.engine.RuleLoader
 import com.aegislayer.daemon.receivers.AppUsageMonitor
 import com.aegislayer.daemon.receivers.EventProcessor
+import com.aegislayer.daemon.trace.TraceEngine
+import com.aegislayer.daemon.trace.TraceLevel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -57,18 +59,23 @@ class SystemControlService : Service() {
 
         actionExecutor = ActionExecutor(this)
 
+        // Init trace engine
+        TraceEngine.init(this)
+        TraceEngine.log(TraceLevel.INFO, "Service", "SystemControlService started")
+
         // Load rules from assets/rules.json
         val rules = RuleLoader.loadFromAssets(this)
         ruleEngine.loadRules(rules)
+        TraceEngine.log(TraceLevel.INFO, "RuleLoader", "Loaded ${rules.size} rules")
 
         serviceScope.launch {
             EventDispatcher.events.collect { event ->
-                Log.d("AegisLayer", "Service Received: $event")
+                TraceEngine.log(TraceLevel.INFO, "Event", event.toString())
                 contextBuilder.updateState(event)
                 val snapshot = contextBuilder.buildCurrentContext()
                 val actions = ruleEngine.evaluateContext(snapshot)
                 if (actions.isNotEmpty()) {
-                    Log.d("AegisLayer", "RuleEngine Triggered Actions: $actions")
+                    TraceEngine.log(TraceLevel.RULE, "RuleEngine", "Triggered: $actions")
                     actionExecutor.execute(actions)
                 }
             }

@@ -4,6 +4,8 @@ import android.app.NotificationManager
 import android.content.Context
 import android.media.AudioManager
 import android.util.Log
+import com.aegislayer.daemon.trace.TraceEngine
+import com.aegislayer.daemon.trace.TraceLevel
 
 class ActionExecutor(private val context: Context) {
 
@@ -14,11 +16,10 @@ class ActionExecutor(private val context: Context) {
 
     fun execute(actions: List<String>) {
         actions.forEach { action ->
-            Log.d("AegisLayer", "Executing action: $action")
             when (action) {
-                "ENABLE_DND"  -> enableDnd()
-                "DISABLE_DND" -> disableDnd()
-                "BOOST_PERFORMANCE" -> boostPerformance()
+                "ENABLE_DND"         -> enableDnd()
+                "DISABLE_DND"        -> disableDnd()
+                "BOOST_PERFORMANCE"  -> boostPerformance()
                 "BLOCK_NOTIFICATIONS" -> enableDnd()
                 else -> Log.w("AegisLayer", "Unknown action: $action")
             }
@@ -27,33 +28,24 @@ class ActionExecutor(private val context: Context) {
 
     private fun enableDnd() {
         if (notificationManager.isNotificationPolicyAccessGranted) {
-            notificationManager.setInterruptionFilter(
-                NotificationManager.INTERRUPTION_FILTER_NONE
-            )
-            Log.d("AegisLayer", "ActionExecutor: DND ENABLED")
+            notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE)
+            TraceEngine.log(TraceLevel.ACTION, "ActionExecutor", "ENABLE_DND — DND activated")
         } else {
-            Log.w("AegisLayer", "ActionExecutor: MANAGE_NOTIFICATION_POLICY not granted — cannot enable DND")
+            TraceEngine.log(TraceLevel.ACTION, "ActionExecutor", "ENABLE_DND — permission not granted, skipped")
         }
     }
 
     private fun disableDnd() {
         if (notificationManager.isNotificationPolicyAccessGranted) {
-            notificationManager.setInterruptionFilter(
-                NotificationManager.INTERRUPTION_FILTER_ALL
-            )
-            Log.d("AegisLayer", "ActionExecutor: DND DISABLED")
+            notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
+            TraceEngine.log(TraceLevel.ACTION, "ActionExecutor", "DISABLE_DND — DND lifted")
         } else {
-            Log.w("AegisLayer", "ActionExecutor: MANAGE_NOTIFICATION_POLICY not granted — cannot disable DND")
+            TraceEngine.log(TraceLevel.ACTION, "ActionExecutor", "DISABLE_DND — permission not granted, skipped")
         }
     }
 
     private fun boostPerformance() {
-        // Silence ringtone/notification volume to reduce system interruptions
-        audioManager.setStreamVolume(
-            AudioManager.STREAM_NOTIFICATION,
-            0,
-            0
-        )
-        Log.d("AegisLayer", "ActionExecutor: BOOST_PERFORMANCE — notification volume muted")
+        audioManager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, 0, 0)
+        TraceEngine.log(TraceLevel.ACTION, "ActionExecutor", "BOOST_PERFORMANCE — notification volume muted")
     }
 }
