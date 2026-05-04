@@ -10,14 +10,28 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.aegislayer.daemon.engine.ContextBuilder
+import com.aegislayer.daemon.engine.EventDispatcher
+import com.aegislayer.daemon.engine.RuleEngine
+import com.aegislayer.daemon.models.Condition
+import com.aegislayer.daemon.models.Rule
 import com.aegislayer.daemon.receivers.AppUsageMonitor
 import com.aegislayer.daemon.receivers.EventProcessor
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 class SystemControlService : Service() {
 
     private lateinit var appUsageMonitor: AppUsageMonitor
     private val eventProcessor = EventProcessor()
     private val channelId = "AegisLayerServiceChannel"
+
+    private val contextBuilder = ContextBuilder()
+    private val ruleEngine = RuleEngine()
+    private val serviceJob = Job()
+    private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
 
     override fun onCreate() {
         super.onCreate()
@@ -39,6 +53,30 @@ class SystemControlService : Service() {
         } else {
             registerReceiver(eventProcessor, filter)
         }
+
+        // Setup dummy rules
+        val dummyRules = listOf(
+            Rule(
+                ruleId = "rule_screen_off_dnd",
+                conditions = listOf(Condition("SCREEN_ON", false)),
+                actions = listOf("ENABLE_DND"),
+                priority = 10
+            )
+        )
+        ruleEngine.loadRules(dummyRules)
+
+        serviceScope.launch {
+            EventDispatcher.events.collect { event ->
+                Log.d("AegisLayer", "Service Received: $event")
+                contextBuilder.updateState(event)
+                val snapshot = contextBuilder.buildCurrentContext()
+                val actions = ruleEngine.evaluateContext(snapshot)
+                if (actions.isNotEmpty()) {
+                    Log.d("AegisLayer", "RuleEngine Triggered Actions: $actions")
+                    // TODO: Pass actions to ActionExecutor
+                }
+            }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -53,6 +91,7 @@ class SystemControlService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         Log.d("AegisLayer", "SystemControlService: onDestroy")
+        serviceJob.cancel()
         appUsageMonitor.stopMonitoring()
         unregisterReceiver(eventProcessor)
     }

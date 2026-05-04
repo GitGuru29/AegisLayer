@@ -48,7 +48,7 @@ class AppUsageMonitor(private val context: Context) {
             currentForegroundPackage = lastPackage
             val systemEvent = SystemEvent.AppForeground(currentForegroundPackage, System.currentTimeMillis())
             Log.d("AegisLayer", "AppUsageMonitor: $systemEvent")
-            // TODO: Forward event to Rule Engine
+            com.aegislayer.daemon.engine.EventDispatcher.dispatch(systemEvent)
         }
     }
 }

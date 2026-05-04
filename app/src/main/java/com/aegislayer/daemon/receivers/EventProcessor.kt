@@ -23,17 +23,17 @@ class EventProcessor : BroadcastReceiver() {
                                  
                 val event = SystemEvent.BatteryState(level, isCharging)
                 Log.d("AegisLayer", "EventProcessor: $event")
-                // TODO: Forward event to ContextBuilder/RuleEngine
+                com.aegislayer.daemon.engine.EventDispatcher.dispatch(event)
             }
             Intent.ACTION_SCREEN_ON -> {
                 val event = SystemEvent.ScreenState(isOn = true)
                 Log.d("AegisLayer", "EventProcessor: $event")
-                // TODO: Forward
+                com.aegislayer.daemon.engine.EventDispatcher.dispatch(event)
             }
             Intent.ACTION_SCREEN_OFF -> {
                 val event = SystemEvent.ScreenState(isOn = false)
                 Log.d("AegisLayer", "EventProcessor: $event")
-                // TODO: Forward
+                com.aegislayer.daemon.engine.EventDispatcher.dispatch(event)
             }
             else -> Log.d("AegisLayer", "EventProcessor received unknown action: $action")
         }

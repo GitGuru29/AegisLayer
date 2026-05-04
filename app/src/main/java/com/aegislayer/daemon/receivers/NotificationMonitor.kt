@@ -20,7 +20,7 @@ class NotificationMonitor : NotificationListenerService() {
             val event = SystemEvent.NotificationPosted(packageName, title)
             Log.d("AegisLayer", "NotificationMonitor: $event")
             
-            // TODO: Forward event to Rule Engine
+            com.aegislayer.daemon.engine.EventDispatcher.dispatch(event)
         }
     }
 
