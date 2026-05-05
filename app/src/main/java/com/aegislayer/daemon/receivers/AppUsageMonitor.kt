@@ -13,14 +13,24 @@ class AppUsageMonitor(private val context: Context) {
     private val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
     private var currentForegroundPackage = ""
     private var timer: Timer? = null
+    private var heartbeatCount = 0
 
     fun startMonitoring() {
         Log.d("AegisLayer", "AppUsageMonitor started")
-        // Poll every 2 seconds for foreground app changes
+        // Poll every 1 second for foreground app changes
         timer = Timer()
         timer?.scheduleAtFixedRate(timerTask {
+            heartbeatCount++
+            if (heartbeatCount >= 10) {
+                heartbeatCount = 0
+                com.aegislayer.daemon.trace.TraceEngine.log(
+                    com.aegislayer.daemon.trace.TraceLevel.INFO,
+                    "Daemon",
+                    "System Monitor Heartbeat — Service Active"
+                )
+            }
             checkForegroundApp()
-        }, 0, 2000)
+        }, 0, 1000)
     }
 
     fun stopMonitoring() {
