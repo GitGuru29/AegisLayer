@@ -85,8 +85,11 @@ class ActionExecutor(private val context: Context) {
     private fun setBrightness(level: Int) {
         if (android.provider.Settings.System.canWrite(context)) {
             val clamped = level.coerceIn(0, 255)
+            // Turn off auto-brightness first, otherwise the phone ignores the manual change
+            android.provider.Settings.System.putInt(context.contentResolver, android.provider.Settings.System.SCREEN_BRIGHTNESS_MODE, android.provider.Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL)
+            // Apply the new brightness level
             android.provider.Settings.System.putInt(context.contentResolver, android.provider.Settings.System.SCREEN_BRIGHTNESS, clamped)
-            TraceEngine.log(TraceLevel.ACTION, "ActionExecutor", "SET_BRIGHTNESS — adjusted to $clamped")
+            TraceEngine.log(TraceLevel.ACTION, "ActionExecutor", "SET_BRIGHTNESS — disabled auto-brightness and adjusted to $clamped")
         } else {
             TraceEngine.log(TraceLevel.ACTION, "ActionExecutor", "SET_BRIGHTNESS — FAILED: Write Settings permission missing")
         }
