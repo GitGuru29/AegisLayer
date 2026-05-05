@@ -15,6 +15,7 @@ import com.aegislayer.daemon.engine.ContextBuilder
 import com.aegislayer.daemon.engine.EventDispatcher
 import com.aegislayer.daemon.engine.RuleEngine
 import com.aegislayer.daemon.engine.RuleLoader
+import com.aegislayer.daemon.engine.RuleRepository
 import com.aegislayer.daemon.receivers.AppUsageMonitor
 import com.aegislayer.daemon.receivers.EventProcessor
 import com.aegislayer.daemon.trace.TraceEngine

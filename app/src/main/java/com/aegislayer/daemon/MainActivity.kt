@@ -15,6 +15,7 @@ import com.aegislayer.daemon.trace.TraceEngine
 import com.aegislayer.daemon.trace.TraceLevel
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.launch
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
@@ -129,7 +130,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun exportLog() {
-        val logFile = java.io.File(filesDir, "aegis_trace.log")
+        val logFile = File(filesDir, "aegis_trace.log")
         if (!logFile.exists()) {
             android.widget.Toast.makeText(this, "Log file empty", android.widget.Toast.LENGTH_SHORT).show()
             return
