@@ -22,7 +22,7 @@ class RuleManagerActivity : AppCompatActivity() {
         setContentView(R.layout.activity_rule_manager)
 
         repository = RuleRepository(this)
-        val aiProcessor = com.aegislayer.daemon.engine.AIPromptProcessor()
+        val aiProcessor = com.aegislayer.daemon.engine.AIPromptProcessor(this)
         
         val rvRules = findViewById<RecyclerView>(R.id.rvRules)
         rvRules.layoutManager = LinearLayoutManager(this)

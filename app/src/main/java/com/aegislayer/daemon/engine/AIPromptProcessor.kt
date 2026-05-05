@@ -1,74 +1,65 @@
 package com.aegislayer.daemon.engine
 
+import android.content.Context
 import com.aegislayer.daemon.models.Condition
 import com.aegislayer.daemon.models.Rule
-import java.util.*
 
-class AIPromptProcessor {
+/**
+ * The translator between human language and machine rules.
+ *
+ * When a user types something like "dim the screen when YouTube opens",
+ * this class does three things:
+ * 1. Passes the text to the ML classifier to figure out what they mean
+ * 2. Maps the predicted intent tags to concrete Conditions and Actions
+ * 3. Wraps everything into a Rule object that the daemon can execute
+ *
+ * It's the glue between the "understanding" (ML) and the "doing" (RuleEngine).
+ */
+class AIPromptProcessor(private val context: Context? = null) {
 
     /**
-     * Translates a natural language prompt into a structured Rule.
-     * In a production app, this would call Gemini Nano or a Cloud LLM.
-     * For now, we use a sophisticated keyword-based heuristic.
+     * Takes a natural language prompt and tries to build a Rule from it.
+     *
+     * Returns null if the ML model couldn't identify both a trigger condition
+     * AND an action — because a rule without both is meaningless.
+     * (e.g., "dim brightness" alone has no trigger, so we can't automate it)
      */
     fun processPrompt(prompt: String): Rule? {
-        val lower = prompt.lowercase(Locale.ROOT)
-        
+        // Ask the ML model: "what intents does this sentence contain?"
+        val classifier = RuleMLTrainer.getClassifier(context)
+        val predictedTags = classifier.predict(prompt)
+
         val conditions = mutableListOf<Condition>()
         val actions = mutableListOf<String>()
-        var priority = 5
+        val priority = 5
 
-        // --- Parsing Conditions ---
-        if (lower.contains("screen is off") || lower.contains("screen off")) {
-            conditions.add(Condition("SCREEN_ON", false))
-        } else if (lower.contains("screen is on") || lower.contains("screen on")) {
-            conditions.add(Condition("SCREEN_ON", true))
-        }
+        // Convert abstract ML tags into concrete rule components
+        for (tag in predictedTags) {
+            when (tag) {
+                // --- Conditions: "WHEN should this rule fire?" ---
+                "COND_SCREEN_OFF"     -> conditions.add(Condition("SCREEN_ON", false))
+                "COND_SCREEN_ON"      -> conditions.add(Condition("SCREEN_ON", true))
+                "COND_CHARGING"       -> conditions.add(Condition("IS_CHARGING", true))
+                "COND_APP_YOUTUBE"    -> conditions.add(Condition("APP_FOREGROUND", "com.google.android.youtube"))
+                "COND_APP_INSTAGRAM"  -> conditions.add(Condition("APP_FOREGROUND", "com.instagram.android"))
 
-        if (lower.contains("charging")) {
-            conditions.add(Condition("IS_CHARGING", true))
-        }
-
-        // App detection (Heuristic: Look for words starting with upper case or specific app names)
-        // Simplified for this demo:
-        if (lower.contains("open youtube")) {
-            conditions.add(Condition("APP_FOREGROUND", "com.google.android.youtube"))
-        } else if (lower.contains("open instagram")) {
-            conditions.add(Condition("APP_FOREGROUND", "com.instagram.android"))
-        }
-
-        // --- Parsing Actions ---
-        if (lower.contains("mute") || lower.contains("silent")) {
-            actions.add("SET_VOLUME:0")
-            actions.add("ENABLE_DND")
-        }
-
-        if (lower.contains("brightness to")) {
-            val level = Regex("\\d+").find(lower.substringAfter("brightness to"))?.value?.toIntOrNull()
-            if (level != null) actions.add("SET_BRIGHTNESS:$level")
-        }
-
-        if (lower.contains("volume to")) {
-            val level = Regex("\\d+").find(lower.substringAfter("volume to"))?.value?.toIntOrNull()
-            if (level != null) actions.add("SET_VOLUME:$level")
-        }
-
-        if (lower.contains("rotate")) {
-            actions.add("SET_AUTO_ROTATE:${!lower.contains("disable")}")
-        }
-
-        if (lower.contains("dnd") || lower.contains("do not disturb")) {
-            if (lower.contains("disable") || lower.contains("off")) {
-                actions.add("DISABLE_DND")
-            } else {
-                actions.add("ENABLE_DND")
+                // --- Actions: "WHAT should the phone do?" ---
+                // Brightness values are on Android's raw 0-255 scale
+                "ACT_MUTE"            -> actions.add("SET_VOLUME:0")
+                "ACT_DND_ON"          -> actions.add("ENABLE_DND")
+                "ACT_DND_OFF"         -> actions.add("DISABLE_DND")
+                "ACT_BRIGHTNESS_LOW"  -> actions.add("SET_BRIGHTNESS:10")   // Very dim, not fully black
+                "ACT_BRIGHTNESS_HIGH" -> actions.add("SET_BRIGHTNESS:250")  // Near max
+                "ACT_ROTATE_ON"       -> actions.add("SET_AUTO_ROTATE:true")
+                "ACT_ROTATE_OFF"      -> actions.add("SET_AUTO_ROTATE:false")
             }
         }
 
+        // A rule needs at least one trigger AND one action to be useful
         if (conditions.isEmpty() || actions.isEmpty()) return null
 
         return Rule(
-            ruleId = "ai_rule_" + System.currentTimeMillis().toString().takeLast(4),
+            ruleId = "ml_rule_" + System.currentTimeMillis().toString().takeLast(4),
             conditions = conditions,
             actions = actions,
             priority = priority
