@@ -44,18 +44,13 @@ class MainActivity : AppCompatActivity() {
 
         btnStart.setOnClickListener {
             startForegroundService(Intent(this, SystemControlService::class.java))
-            statusDot.backgroundTintList = ColorStateList.valueOf(
-                ContextCompat.getColor(this, R.color.status_active)
-            )
-            tvStatus.text = "Status: Active"
+            updateStatusUI(true)
+            checkAllPermissions()
         }
 
         btnStop.setOnClickListener {
             stopService(Intent(this, SystemControlService::class.java))
-            statusDot.backgroundTintList = ColorStateList.valueOf(
-                ContextCompat.getColor(this, R.color.status_inactive)
-            )
-            tvStatus.text = "Status: Offline"
+            updateStatusUI(false)
         }
 
         // Collect live trace entries from TraceEngine
@@ -63,6 +58,55 @@ class MainActivity : AppCompatActivity() {
             TraceEngine.liveEntries.collect { entry ->
                 appendEntry(entry.level, entry.tag, entry.message)
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateStatusUI(isServiceRunning(SystemControlService::class.java))
+    }
+
+    private fun isServiceRunning(serviceClass: Class<*>): Boolean {
+        val manager = getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+        for (service in manager.getRunningServices(Int.MAX_VALUE)) {
+            if (serviceClass.name == service.service.className) {
+                return true
+            }
+        }
+        return false
+    }
+
+    private fun updateStatusUI(active: Boolean) {
+        val statusDot = findViewById<View>(R.id.statusDot)
+        val tvStatus = findViewById<TextView>(R.id.tvStatusText)
+        if (active) {
+            statusDot.backgroundTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(this, R.color.status_active)
+            )
+            tvStatus.text = "Status: Active"
+        } else {
+            statusDot.backgroundTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(this, R.color.status_inactive)
+            )
+            tvStatus.text = "Status: Offline"
+        }
+    }
+
+    private fun checkAllPermissions() {
+        if (!com.aegislayer.daemon.utils.PermissionUtils.hasUsageStatsPermission(this)) {
+            com.aegislayer.daemon.utils.PermissionUtils.requestUsageStatsPermission(this)
+            return
+        }
+        if (!com.aegislayer.daemon.utils.PermissionUtils.hasNotificationListenerPermission(this)) {
+            com.aegislayer.daemon.utils.PermissionUtils.requestNotificationListenerPermission(this)
+            return
+        }
+        if (!com.aegislayer.daemon.utils.PermissionUtils.hasDndPermission(this)) {
+            com.aegislayer.daemon.utils.PermissionUtils.requestDndPermission(this)
+            return
+        }
+        if (!com.aegislayer.daemon.utils.PermissionUtils.isIgnoringBatteryOptimizations(this)) {
+            com.aegislayer.daemon.utils.PermissionUtils.requestIgnoreBatteryOptimizations(this)
         }
     }
 

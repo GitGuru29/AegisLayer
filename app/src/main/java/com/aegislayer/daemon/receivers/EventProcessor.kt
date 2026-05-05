@@ -10,6 +10,10 @@ import com.aegislayer.daemon.models.SystemEvent
 
 class EventProcessor : BroadcastReceiver() {
 
+    // Cache last battery state to avoid flooding on sticky ACTION_BATTERY_CHANGED
+    private var lastBatteryLevel: Int = -1
+    private var lastIsCharging: Boolean? = null
+
     override fun onReceive(context: Context?, intent: Intent?) {
         if (intent == null) return
         val action = intent.action ?: return
@@ -20,7 +24,12 @@ class EventProcessor : BroadcastReceiver() {
                 val status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
                 val isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
                                  status == BatteryManager.BATTERY_STATUS_FULL
-                                 
+
+                // Only dispatch if something actually changed
+                if (level == lastBatteryLevel && isCharging == lastIsCharging) return
+                lastBatteryLevel = level
+                lastIsCharging = isCharging
+
                 val event = SystemEvent.BatteryState(level, isCharging)
                 Log.d("AegisLayer", "EventProcessor: $event")
                 com.aegislayer.daemon.engine.EventDispatcher.dispatch(event)

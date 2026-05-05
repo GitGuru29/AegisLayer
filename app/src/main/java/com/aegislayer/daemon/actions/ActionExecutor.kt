@@ -31,7 +31,7 @@ class ActionExecutor(private val context: Context) {
             notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE)
             TraceEngine.log(TraceLevel.ACTION, "ActionExecutor", "ENABLE_DND — DND activated")
         } else {
-            TraceEngine.log(TraceLevel.ACTION, "ActionExecutor", "ENABLE_DND — permission not granted, skipped")
+            TraceEngine.log(TraceLevel.ACTION, "ActionExecutor", "ENABLE_DND — FAILED: 'Do Not Disturb' access not granted in system settings")
         }
     }
 
@@ -40,7 +40,7 @@ class ActionExecutor(private val context: Context) {
             notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
             TraceEngine.log(TraceLevel.ACTION, "ActionExecutor", "DISABLE_DND — DND lifted")
         } else {
-            TraceEngine.log(TraceLevel.ACTION, "ActionExecutor", "DISABLE_DND — permission not granted, skipped")
+            TraceEngine.log(TraceLevel.ACTION, "ActionExecutor", "DISABLE_DND — FAILED: 'Do Not Disturb' access not granted in system settings")
         }
     }
 
