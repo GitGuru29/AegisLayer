@@ -15,6 +15,10 @@ class NotificationMonitor : NotificationListenerService() {
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         sbn?.let {
             val packageName = it.packageName
+            
+            // Ignore our own notifications to prevent infinite feedback loops
+            if (packageName == this.packageName) return@let
+            
             val title = it.notification.extras.getString("android.title")
             
             val event = SystemEvent.NotificationPosted(packageName, title)
