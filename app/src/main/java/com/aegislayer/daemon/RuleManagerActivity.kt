@@ -30,18 +30,82 @@ class RuleManagerActivity : AppCompatActivity() {
         rvRules.adapter = adapter
 
         findViewById<MaterialButton>(R.id.btnAddRule).setOnClickListener {
-            // TODO: Open New Rule Dialog
-            android.widget.Toast.makeText(this, "Rule creation coming soon!", android.widget.Toast.LENGTH_SHORT).show()
+            showAddRuleDialog()
         }
     }
 
-    class RuleAdapter(private val rules: List<Rule>) : RecyclerView.Adapter<RuleAdapter.ViewHolder>() {
+    private fun showAddRuleDialog() {
+        val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+        builder.setTitle("Create New Rule")
+        
+        val view = layoutInflater.inflate(R.layout.dialog_add_rule, null)
+        builder.setView(view)
+
+        val etId = view.findViewById<android.widget.EditText>(R.id.etRuleId)
+        val spCondition = view.findViewById<android.widget.Spinner>(R.id.spCondition)
+        val etCondValue = view.findViewById<android.widget.EditText>(R.id.etCondValue)
+        val spAction = view.findViewById<android.widget.Spinner>(R.id.spAction)
+        val etActValue = view.findViewById<android.widget.EditText>(R.id.etActValue)
+
+        builder.setPositiveButton("Save") { _, _ ->
+            val id = etId.text.toString()
+            val condType = spCondition.selectedItem.toString()
+            val condValRaw = etCondValue.text.toString()
+            val actType = spAction.selectedItem.toString()
+            val actVal = etActValue.text.toString()
+
+            if (id.isNotEmpty()) {
+                val conditionValue: Any = when (condType) {
+                    "SCREEN_ON", "IS_CHARGING" -> condValRaw.toBoolean()
+                    "BATTERY_LEVEL" -> condValRaw.toIntOrNull() ?: 50
+                    else -> condValRaw
+                }
+
+                val actionStr = if (actVal.isNotEmpty()) "$actType:$actVal" else actType
+                
+                val newRule = Rule(
+                    ruleId = id,
+                    conditions = listOf(com.aegislayer.daemon.models.Condition(condType, conditionValue)),
+                    actions = listOf(actionStr),
+                    priority = 5
+                )
+                
+                repository.saveUserRule(newRule)
+                refreshList()
+            }
+        }
+        builder.setNegativeButton("Cancel", null)
+        builder.show()
+    }
+
+    private fun refreshList() {
+        adapter.updateRules(repository.getAllRules())
+    }
+
+    fun showDeleteConfirm(ruleId: String) {
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle("Delete Rule?")
+            .setMessage("Are you sure you want to remove '$ruleId'?")
+            .setPositiveButton("Delete") { _, _ ->
+                repository.deleteUserRule(ruleId)
+                refreshList()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    class RuleAdapter(private var rules: List<Rule>) : RecyclerView.Adapter<RuleAdapter.ViewHolder>() {
 
         class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             val tvId: TextView = view.findViewById(R.id.tvRuleId)
             val tvPriority: TextView = view.findViewById(R.id.tvPriority)
             val tvConditions: TextView = view.findViewById(R.id.tvConditions)
             val tvActions: TextView = view.findViewById(R.id.tvActions)
+        }
+
+        fun updateRules(newRules: List<Rule>) {
+            rules = newRules
+            notifyDataSetChanged()
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -55,6 +119,11 @@ class RuleManagerActivity : AppCompatActivity() {
             holder.tvPriority.text = "P: ${rule.priority}"
             holder.tvConditions.text = "IF: " + rule.conditions.joinToString(", ") { "${it.type}=${it.value}" }
             holder.tvActions.text = "THEN: " + rule.actions.joinToString(", ")
+
+            holder.itemView.setOnLongClickListener {
+                (holder.itemView.context as? RuleManagerActivity)?.showDeleteConfirm(rule.ruleId)
+                true
+            }
         }
 
         override fun getItemCount() = rules.size

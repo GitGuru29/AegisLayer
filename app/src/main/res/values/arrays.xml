@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="condition_types">
+        <item>APP_FOREGROUND</item>
+        <item>SCREEN_ON</item>
+        <item>BATTERY_LEVEL</item>
+        <item>IS_CHARGING</item>
+        <item>WIFI_CONNECTED</item>
+    </string-array>
+
+    <string-array name="action_types">
+        <item>ENABLE_DND</item>
+        <item>DISABLE_DND</item>
+        <item>SET_BRIGHTNESS</item>
+        <item>SET_VOLUME</item>
+        <item>SET_AUTO_ROTATE</item>
+        <item>TOGGLE_BLUETOOTH</item>
+    </string-array>
+</resources>
