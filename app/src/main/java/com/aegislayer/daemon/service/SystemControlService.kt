@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.aegislayer.daemon.R
 import com.aegislayer.daemon.actions.ActionExecutor
 import com.aegislayer.daemon.engine.ContextBuilder
 import com.aegislayer.daemon.engine.EventDispatcher
