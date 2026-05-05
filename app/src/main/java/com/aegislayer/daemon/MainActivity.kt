@@ -129,7 +129,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun exportLog() {
-        val logFile = android.io.File(filesDir, "aegis_trace.log")
+        val logFile = java.io.File(filesDir, "aegis_trace.log")
         if (!logFile.exists()) {
             android.widget.Toast.makeText(this, "Log file empty", android.widget.Toast.LENGTH_SHORT).show()
             return
