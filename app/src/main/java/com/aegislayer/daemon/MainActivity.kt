@@ -63,7 +63,13 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        updateStatusUI(isServiceRunning(SystemControlService::class.java))
+        val isRunning = isServiceRunning(SystemControlService::class.java)
+        updateStatusUI(isRunning)
+        
+        // If the service is running but permissions are missing, keep guiding the user
+        if (isRunning) {
+            checkNextMissingPermission()
+        }
     }
 
     private fun isServiceRunning(serviceClass: Class<*>): Boolean {
@@ -74,6 +80,16 @@ class MainActivity : AppCompatActivity() {
             }
         }
         return false
+    }
+
+    private fun checkNextMissingPermission() {
+        val utils = com.aegislayer.daemon.utils.PermissionUtils
+        when {
+            !utils.hasUsageStatsPermission(this) -> utils.requestUsageStatsPermission(this)
+            !utils.hasNotificationListenerPermission(this) -> utils.requestNotificationListenerPermission(this)
+            !utils.hasDndPermission(this) -> utils.requestDndPermission(this)
+            !utils.isIgnoringBatteryOptimizations(this) -> utils.requestIgnoreBatteryOptimizations(this)
+        }
     }
 
     private fun updateStatusUI(active: Boolean) {
@@ -93,21 +109,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkAllPermissions() {
-        if (!com.aegislayer.daemon.utils.PermissionUtils.hasUsageStatsPermission(this)) {
-            com.aegislayer.daemon.utils.PermissionUtils.requestUsageStatsPermission(this)
-            return
-        }
-        if (!com.aegislayer.daemon.utils.PermissionUtils.hasNotificationListenerPermission(this)) {
-            com.aegislayer.daemon.utils.PermissionUtils.requestNotificationListenerPermission(this)
-            return
-        }
-        if (!com.aegislayer.daemon.utils.PermissionUtils.hasDndPermission(this)) {
-            com.aegislayer.daemon.utils.PermissionUtils.requestDndPermission(this)
-            return
-        }
-        if (!com.aegislayer.daemon.utils.PermissionUtils.isIgnoringBatteryOptimizations(this)) {
-            com.aegislayer.daemon.utils.PermissionUtils.requestIgnoreBatteryOptimizations(this)
-        }
+        checkNextMissingPermission()
     }
 
     private fun appendEntry(level: TraceLevel, tag: String, message: String) {
