@@ -26,9 +26,27 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
-            android:text="+ NEW RULE"
+            android:text="+ NEW"
             android:textColor="@color/accent_color" />
     </RelativeLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:hint="Ask AI to create a rule..."
+        app:startIconDrawable="@android:drawable/ic_menu_edit"
+        app:endIconMode="custom"
+        app:endIconDrawable="@android:drawable/ic_menu_send"
+        android:id="@+id/tilAiPrompt"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etAiPrompt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:imeOptions="actionSend" />
+    </com.google.android.material.textfield.TextInputLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvRules"

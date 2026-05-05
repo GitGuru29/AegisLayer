@@ -22,6 +22,7 @@ class RuleManagerActivity : AppCompatActivity() {
         setContentView(R.layout.activity_rule_manager)
 
         repository = RuleRepository(this)
+        val aiProcessor = com.aegislayer.daemon.engine.AIPromptProcessor()
         
         val rvRules = findViewById<RecyclerView>(R.id.rvRules)
         rvRules.layoutManager = LinearLayoutManager(this)
@@ -31,6 +32,24 @@ class RuleManagerActivity : AppCompatActivity() {
 
         findViewById<MaterialButton>(R.id.btnAddRule).setOnClickListener {
             showAddRuleDialog()
+        }
+
+        val tilAi = findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.tilAiPrompt)
+        val etAi = findViewById<android.widget.EditText>(R.id.etAiPrompt)
+
+        tilAi.setEndIconOnClickListener {
+            val prompt = etAi.text.toString()
+            if (prompt.isNotEmpty()) {
+                val rule = aiProcessor.processPrompt(prompt)
+                if (rule != null) {
+                    repository.saveUserRule(rule)
+                    etAi.text.clear()
+                    refreshList()
+                    android.widget.Toast.makeText(this, "AI: Rule '${rule.ruleId}' created!", android.widget.Toast.LENGTH_SHORT).show()
+                } else {
+                    android.widget.Toast.makeText(this, "AI: Sorry, I couldn't understand that rule.", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 
