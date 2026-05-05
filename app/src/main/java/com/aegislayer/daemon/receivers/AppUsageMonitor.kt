@@ -47,7 +47,15 @@ class AppUsageMonitor(private val context: Context) {
         if (lastPackage != currentForegroundPackage && lastPackage.isNotEmpty()) {
             currentForegroundPackage = lastPackage
             val systemEvent = SystemEvent.AppForeground(currentForegroundPackage, System.currentTimeMillis())
+            
+            // Log to both system log and our internal TraceEngine
             Log.d("AegisLayer", "AppUsageMonitor: $systemEvent")
+            com.aegislayer.daemon.trace.TraceEngine.log(
+                com.aegislayer.daemon.trace.TraceLevel.INFO, 
+                "Monitor", 
+                "Foreground App: $currentForegroundPackage"
+            )
+            
             com.aegislayer.daemon.engine.EventDispatcher.dispatch(systemEvent)
         }
     }

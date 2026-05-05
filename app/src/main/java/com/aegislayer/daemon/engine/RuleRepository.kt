@@ -27,11 +27,19 @@ class RuleRepository(private val context: Context) {
             current.add(rule)
         }
         saveToInternal(current)
+        notifyService()
     }
 
     fun deleteUserRule(ruleId: String) {
         val current = loadUserRules().filter { it.ruleId != ruleId }
         saveToInternal(current)
+        notifyService()
+    }
+
+    private fun notifyService() {
+        val intent = android.content.Intent("com.aegislayer.daemon.ACTION_RELOAD_RULES")
+        intent.`package` = context.packageName
+        context.sendBroadcast(intent)
     }
 
     private fun loadUserRules(): List<Rule> {

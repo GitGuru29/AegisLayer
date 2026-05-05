@@ -41,6 +41,15 @@ class SystemControlService : Service() {
 
     companion object {
         const val ACTION_HALT = "com.aegislayer.daemon.ACTION_HALT"
+        const val ACTION_RELOAD_RULES = "com.aegislayer.daemon.ACTION_RELOAD_RULES"
+    }
+
+    private val reloadReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
+            if (intent?.action == ACTION_RELOAD_RULES) {
+                reloadRules()
+            }
+        }
     }
 
     override fun onCreate() {
@@ -56,8 +65,10 @@ class SystemControlService : Service() {
         val filter = EventProcessor.getIntentFilter()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(eventProcessor, filter, Context.RECEIVER_NOT_EXPORTED)
+            registerReceiver(reloadReceiver, IntentFilter(ACTION_RELOAD_RULES), Context.RECEIVER_NOT_EXPORTED)
         } else {
             registerReceiver(eventProcessor, filter)
+            registerReceiver(reloadReceiver, IntentFilter(ACTION_RELOAD_RULES))
         }
 
         actionExecutor = ActionExecutor(this)
@@ -65,10 +76,7 @@ class SystemControlService : Service() {
         TraceEngine.init(this)
         TraceEngine.log(TraceLevel.INFO, "Service", "SystemControlService started")
 
-        val repository = RuleRepository(this)
-        val rules = repository.getAllRules()
-        ruleEngine.loadRules(rules)
-        TraceEngine.log(TraceLevel.INFO, "RuleLoader", "Loaded ${rules.size} total rules")
+        reloadRules()
 
         serviceScope.launch {
             EventDispatcher.events.collect { event ->
@@ -104,6 +112,14 @@ class SystemControlService : Service() {
         serviceJob.cancel()
         appUsageMonitor.stopMonitoring()
         unregisterReceiver(eventProcessor)
+        unregisterReceiver(reloadReceiver)
+    }
+
+    private fun reloadRules() {
+        val repository = RuleRepository(this)
+        val rules = repository.getAllRules()
+        ruleEngine.loadRules(rules)
+        TraceEngine.log(TraceLevel.INFO, "RuleLoader", "Service reloaded ${rules.size} total rules")
     }
 
     private fun createNotificationChannel() {
