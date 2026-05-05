@@ -41,7 +41,7 @@ object PermissionUtils {
     }
 
     fun isIgnoringBatteryOptimizations(context: Context): Boolean {
-        val powerManager = context.getSystemService(Context.POWER_MANAGER_SERVICE) as PowerManager
+        val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             powerManager.isIgnoringBatteryOptimizations(context.packageName)
         } else {
