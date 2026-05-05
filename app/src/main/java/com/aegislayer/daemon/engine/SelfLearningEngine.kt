@@ -142,10 +142,32 @@ class SelfLearningEngine(private val context: Context) {
                 RuleMLTrainer.retrain(context, observations)
                 lastRetrainTimestamp = System.currentTimeMillis()
 
+                // Autonomous Rule Generation
+                val aiProcessor = AIPromptProcessor(context)
+                val repository = RuleRepository(context)
+                var newRulesCount = 0
+
+                // The observations are a list of Pair<String, List<String>> (sentence, tags)
+                // We want to avoid adding the same rule over and over, so we use a set of tags
+                val uniqueBehaviors = observations.map { it.second }.toSet()
+                
+                for (tags in uniqueBehaviors) {
+                    val rule = aiProcessor.processTags(tags)
+                    if (rule != null) {
+                        // Change the rule ID so it's clearly marked as ML-generated
+                        val autoRule = rule.copy(
+                            ruleId = "auto_ml_" + tags.joinToString("_").take(20) + "_" + System.currentTimeMillis().toString().takeLast(4),
+                            priority = 6 // Slightly higher than default 5 so they take precedence
+                        )
+                        repository.saveUserRule(autoRule)
+                        newRulesCount++
+                    }
+                }
+
                 val patternCount = UsagePatternLogger.loadPatterns(context).size
                 TraceEngine.log(
                     TraceLevel.INFO, TAG,
-                    "Retrain complete! Learned from $patternCount usage patterns → ${observations.size} training observations"
+                    "Retrain complete! Learned $newRulesCount autonomous rules from $patternCount usage patterns."
                 )
 
             } catch (e: Exception) {

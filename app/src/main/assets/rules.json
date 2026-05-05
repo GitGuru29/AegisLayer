@@ -23,5 +23,21 @@
     ],
     "actions": ["BOOST_PERFORMANCE"],
     "priority": 8
+  },
+  {
+    "ruleId": "rule_youtube_dim",
+    "conditions": [
+      { "type": "APP_FOREGROUND", "value": "com.google.android.youtube" }
+    ],
+    "actions": ["SET_BRIGHTNESS:128", "SET_VOLUME:50"],
+    "priority": 7
+  },
+  {
+    "ruleId": "rule_pdf_dnd",
+    "conditions": [
+      { "type": "APP_FOREGROUND", "value": "com.adobe.reader" }
+    ],
+    "actions": ["ENABLE_DND"],
+    "priority": 7
   }
 ]

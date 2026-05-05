@@ -28,13 +28,21 @@ class AIPromptProcessor(private val context: Context? = null) {
         // Ask the ML model: "what intents does this sentence contain?"
         val classifier = RuleMLTrainer.getClassifier(context)
         val predictedTags = classifier.predict(prompt)
+        return processTags(predictedTags)
+    }
+
+    /**
+     * Converts abstract ML tags directly into concrete rule components.
+     * Used by the ML engine to autonomously generate rules from observed patterns.
+     */
+    fun processTags(tags: List<String>): Rule? {
 
         val conditions = mutableListOf<Condition>()
         val actions = mutableListOf<String>()
         val priority = 5
 
         // Convert abstract ML tags into concrete rule components
-        for (tag in predictedTags) {
+        for (tag in tags) {
             when (tag) {
                 // --- Conditions: "WHEN should this rule fire?" ---
                 "COND_SCREEN_OFF"     -> conditions.add(Condition("SCREEN_ON", false))
