@@ -40,6 +40,11 @@
             </intent-filter>
         </activity>
 
+        <activity 
+            android:name=".RuleManagerActivity"
+            android:label="Rule Manager"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
+
         <service
             android:name=".service.SystemControlService"
             android:enabled="true"
@@ -56,6 +61,16 @@
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
             
     </application>
 

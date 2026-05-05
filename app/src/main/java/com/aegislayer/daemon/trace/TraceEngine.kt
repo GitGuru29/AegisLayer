@@ -28,6 +28,12 @@ object TraceEngine {
         _liveEntries.tryEmit(entry)
     }
 
+    fun clear() {
+        logFile?.let {
+            if (it.exists()) it.delete()
+        }
+    }
+
     fun readRecent(n: Int = 50): List<TraceEntry> {
         val file = logFile ?: return emptyList()
         if (!file.exists()) return emptyList()

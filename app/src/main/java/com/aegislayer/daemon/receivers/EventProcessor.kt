@@ -44,6 +44,14 @@ class EventProcessor : BroadcastReceiver() {
                 Log.d("AegisLayer", "EventProcessor: $event")
                 com.aegislayer.daemon.engine.EventDispatcher.dispatch(event)
             }
+            android.net.wifi.WifiManager.NETWORK_STATE_CHANGED_ACTION -> {
+                val wifiManager = context?.applicationContext?.getSystemService(Context.WIFI_SERVICE) as? android.net.wifi.WifiManager
+                val info = wifiManager?.connectionInfo
+                val isConnected = info?.networkId != -1
+                val event = SystemEvent.WifiState(info?.ssid, isConnected)
+                Log.d("AegisLayer", "EventProcessor: $event")
+                com.aegislayer.daemon.engine.EventDispatcher.dispatch(event)
+            }
             else -> Log.d("AegisLayer", "EventProcessor received unknown action: $action")
         }
     }
@@ -54,6 +62,7 @@ class EventProcessor : BroadcastReceiver() {
                 addAction(Intent.ACTION_BATTERY_CHANGED)
                 addAction(Intent.ACTION_SCREEN_ON)
                 addAction(Intent.ACTION_SCREEN_OFF)
+                addAction(android.net.wifi.WifiManager.NETWORK_STATE_CHANGED_ACTION)
             }
         }
     }

@@ -53,6 +53,21 @@ class MainActivity : AppCompatActivity() {
             updateStatusUI(false)
         }
 
+        findViewById<View>(R.id.btnClearLog).setOnClickListener {
+            TraceEngine.clear()
+            tvTraceLog.text = ""
+            logEntryCount = 0
+            tvLogCount.text = "0 entries"
+        }
+
+        findViewById<View>(R.id.btnExportLog).setOnClickListener {
+            exportLog()
+        }
+
+        findViewById<View>(R.id.btnRuleManager).setOnClickListener {
+            startActivity(Intent(this, RuleManagerActivity::class.java))
+        }
+
         // Collect live trace entries from TraceEngine
         lifecycleScope.launch {
             TraceEngine.liveEntries.collect { entry ->
@@ -89,6 +104,7 @@ class MainActivity : AppCompatActivity() {
             !utils.hasNotificationListenerPermission(this) -> utils.requestNotificationListenerPermission(this)
             !utils.hasDndPermission(this) -> utils.requestDndPermission(this)
             !utils.isIgnoringBatteryOptimizations(this) -> utils.requestIgnoreBatteryOptimizations(this)
+            !utils.hasWriteSettingsPermission(this) -> utils.requestWriteSettingsPermission(this)
         }
     }
 
@@ -110,6 +126,28 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkAllPermissions() {
         checkNextMissingPermission()
+    }
+
+    private fun exportLog() {
+        val logFile = android.io.File(filesDir, "aegis_trace.log")
+        if (!logFile.exists()) {
+            android.widget.Toast.makeText(this, "Log file empty", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val uri = androidx.core.content.FileProvider.getUriForFile(
+            this,
+            "$packageName.fileprovider",
+            logFile
+        )
+
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        startActivity(Intent.createChooser(intent, "Export Aegis Trace Log"))
     }
 
     private fun appendEntry(level: TraceLevel, tag: String, message: String) {

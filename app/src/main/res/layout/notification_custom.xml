@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="12dp"
+    android:background="#1A202C"
+    android:gravity="center_vertical">
+
+    <ImageView
+        android:id="@+id/notifIcon"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:src="@android:drawable/ic_secure"
+        android:tint="#34D399" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginStart="12dp">
+
+        <TextView
+            android:id="@+id/notifTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AegisLayer Active"
+            android:textColor="#F7FAFC"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/notifStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Monitoring system events..."
+            android:textColor="#A0AEC0"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btnHalt"
+        android:layout_width="wrap_content"
+        android:layout_height="32dp"
+        android:text="HALT"
+        android:textSize="10sp"
+        android:textColor="#FFFFFF"
+        android:backgroundTint="#F56565"
+        android:paddingHorizontal="12dp" />
+
+</LinearLayout>

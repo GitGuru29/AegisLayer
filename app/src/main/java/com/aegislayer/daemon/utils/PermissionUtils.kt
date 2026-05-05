@@ -76,4 +76,16 @@ object PermissionUtils {
             context.startActivity(intent)
         }
     }
+
+    fun hasWriteSettingsPermission(context: Context): Boolean {
+        return Settings.System.canWrite(context)
+    }
+
+    fun requestWriteSettingsPermission(context: Context) {
+        val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS).apply {
+            data = Uri.parse("package:${context.packageName}")
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        context.startActivity(intent)
+    }
 }

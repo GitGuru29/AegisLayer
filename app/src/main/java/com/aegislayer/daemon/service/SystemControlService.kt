@@ -29,6 +29,7 @@ class SystemControlService : Service() {
     private lateinit var appUsageMonitor: AppUsageMonitor
     private val eventProcessor = EventProcessor()
     private val channelId = "AegisLayerServiceChannel"
+    private val notificationId = 1
 
     private val contextBuilder = ContextBuilder()
     private val ruleEngine = RuleEngine()
@@ -36,16 +37,16 @@ class SystemControlService : Service() {
     private val serviceJob = Job()
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
 
+    companion object {
+        const val ACTION_HALT = "com.aegislayer.daemon.ACTION_HALT"
+    }
+
     override fun onCreate() {
         super.onCreate()
         Log.d("AegisLayer", "SystemControlService: onCreate")
         
         createNotificationChannel()
-        if (Build.VERSION.SDK_INT >= 34) {
-            startForeground(1, createNotification(), android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
-        } else {
-            startForeground(1, createNotification())
-        }
+        startForeground(notificationId, createNotification("Monitoring system events..."))
 
         appUsageMonitor = AppUsageMonitor(this)
         appUsageMonitor.startMonitoring()
@@ -59,14 +60,13 @@ class SystemControlService : Service() {
 
         actionExecutor = ActionExecutor(this)
 
-        // Init trace engine
         TraceEngine.init(this)
         TraceEngine.log(TraceLevel.INFO, "Service", "SystemControlService started")
 
-        // Load rules from assets/rules.json
-        val rules = RuleLoader.loadFromAssets(this)
+        val repository = RuleRepository(this)
+        val rules = repository.getAllRules()
         ruleEngine.loadRules(rules)
-        TraceEngine.log(TraceLevel.INFO, "RuleLoader", "Loaded ${rules.size} rules")
+        TraceEngine.log(TraceLevel.INFO, "RuleLoader", "Loaded ${rules.size} total rules")
 
         serviceScope.launch {
             EventDispatcher.events.collect { event ->
@@ -77,13 +77,18 @@ class SystemControlService : Service() {
                 if (actions.isNotEmpty()) {
                     TraceEngine.log(TraceLevel.RULE, "RuleEngine", "Triggered: $actions")
                     actionExecutor.execute(actions)
+                    updateNotification("Active Rule: $actions")
                 }
             }
         }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d("AegisLayer", "SystemControlService: onStartCommand")
+        if (intent?.action == ACTION_HALT) {
+            TraceEngine.log(TraceLevel.INFO, "Service", "HALT received from notification")
+            stopSelf()
+            return START_NOT_STICKY
+        }
         return START_STICKY
     }
 
@@ -111,11 +116,31 @@ class SystemControlService : Service() {
         }
     }
 
-    private fun createNotification(): Notification {
+    private fun createNotification(statusText: String): Notification {
+        val haltIntent = Intent(this, SystemControlService::class.java).apply {
+            action = ACTION_HALT
+        }
+        val haltPendingIntent = android.app.PendingIntent.getService(
+            this, 0, haltIntent, 
+            android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val remoteViews = android.widget.RemoteViews(packageName, R.layout.notification_custom)
+        remoteViews.setTextViewText(R.id.notifStatus, statusText)
+        remoteViews.setOnClickPendingIntent(R.id.btnHalt, haltPendingIntent)
+
         return NotificationCompat.Builder(this, channelId)
-            .setContentTitle("AegisLayer Active")
-            .setContentText("System Control Daemon is running")
             .setSmallIcon(android.R.drawable.ic_secure)
+            .setCustomContentView(remoteViews)
+            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
             .build()
+    }
+
+    private fun updateNotification(statusText: String) {
+        val notification = createNotification(statusText)
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.notify(notificationId, notification)
     }
 }

@@ -21,6 +21,10 @@ class ContextBuilder {
             is SystemEvent.NotificationPosted -> {
                 state["LAST_NOTIFICATION_PKG"] = event.packageName
             }
+            is SystemEvent.WifiState -> {
+                state["WIFI_CONNECTED"] = event.isConnected
+                state["WIFI_SSID"] = event.ssid ?: ""
+            }
         }
     }
 
